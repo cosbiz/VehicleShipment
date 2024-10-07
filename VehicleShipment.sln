@@ -3,7 +3,31 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{9FCF2CE4-0CEE-4985-B8E8-A5D85856469F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{F9F94D49-0102-42FE-B8AF-CF1C4AA63E7E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VehicleShipment.Web", "VehicleShipment.Web\VehicleShipment.Web.csproj", "{ABF88DFB-8692-4D2F-8781-17A2A5CBA587}"
+EndProject
 Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9FCF2CE4-0CEE-4985-B8E8-A5D85856469F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9FCF2CE4-0CEE-4985-B8E8-A5D85856469F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9FCF2CE4-0CEE-4985-B8E8-A5D85856469F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9FCF2CE4-0CEE-4985-B8E8-A5D85856469F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9F94D49-0102-42FE-B8AF-CF1C4AA63E7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9F94D49-0102-42FE-B8AF-CF1C4AA63E7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9F94D49-0102-42FE-B8AF-CF1C4AA63E7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9F94D49-0102-42FE-B8AF-CF1C4AA63E7E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABF88DFB-8692-4D2F-8781-17A2A5CBA587}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABF88DFB-8692-4D2F-8781-17A2A5CBA587}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABF88DFB-8692-4D2F-8781-17A2A5CBA587}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABF88DFB-8692-4D2F-8781-17A2A5CBA587}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
