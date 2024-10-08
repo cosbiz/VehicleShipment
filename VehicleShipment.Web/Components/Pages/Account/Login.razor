@@ -1,0 +1,71 @@
+﻿@page "/login"
+
+@inject IAccountService accountService;
+@inject NavigationManager navigationManager;
+
+
+
+<h1>Login</h1>
+<div class="row">
+    <div class="col-md-4">
+        <section>
+            <EditForm Model="Input" method="post" OnValidSubmit="OnLogin" FormName="Login">
+                <DataAnnotationsValidator />
+                    <hr />
+                    <AlertMessage @ref="alert" />
+                    <div class="form-floating mb-3">
+                        <InputText @bind-Value="Input.Email" class="form-control" aria-required="true" />
+                        <label for="email" class="form-label">Email</label>
+                        <ValidationMessage For="() => Input.Email" class="text-danger" />
+                    </div>
+                    <div class="form-floating mb-3">
+                        <InputText type="password" @bind-Value="Input.Password" class="form-control" aria-required="true" />
+                        <label for="password" class="form-label">Password</label>
+                        <ValidationMessage For="() => Input.Password" class="text-danger" />
+                    </div>
+                    <div class="form-floating mb-3">
+                        <InputCheckbox @bind-Value="Input.Remember" />
+                        Remember me
+                    </div>
+                    <div>
+                        <button type="submit" class="w-100 btn btn-lg btn-primary">Login</button>
+                    </div>
+            </EditForm>
+        </section>
+    </div>
+</div>
+
+@code {
+    private AlertMessage alert;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    private async Task OnLogin()
+    {
+        var verify = await accountService.VerifyUser(Input.Email, Input.Password);
+        if (!verify.IsSuccess)
+        {
+            //Alert
+            alert.ShowDangerAlert(verify.ErrorMessage);
+            return;
+        }
+
+        // Navigate To HomePage
+        navigationManager.NavigateTo($"/processor/{verify.Value}/{Input.Password}/{Input.Remember}");
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = "";
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        public bool Remember { get; set; }
+    }
+
+}

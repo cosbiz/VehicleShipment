@@ -1,3 +1,9 @@
+using Domain.Entities;
+using Domain.Interfaces;
+using Infrastructure.Data;
+using Infrastructure.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using VehicleShipment.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -5,6 +11,29 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
 	.AddInteractiveServerComponents();
+
+builder.Services.AddBlazorBootstrap();
+
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddAuthentication().AddCookie(IdentityConstants.ApplicationScheme);
+
+builder.Services.AddIdentityCore<User>()
+	.AddEntityFrameworkStores<AppDbContext>()
+	.AddSignInManager();
+
+builder.Services.ConfigureApplicationCookie(opt =>
+{
+	opt.LoginPath = "/login";
+	opt.AccessDeniedPath = "/accessdenied";
+});
+
+builder.Services.AddDbContext<AppDbContext>(opt =>
+{
+	opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+
+builder.Services.AddScoped<IAccountService, AccountService>();
 
 var app = builder.Build();
 

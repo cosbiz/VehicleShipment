@@ -1,0 +1,38 @@
+﻿ <Alert Color="@alertColor" Dismissable="false"> <Icon Name="@alertIconName" class="me-2"></Icon>@alertMessage </Alert>
+
+@code {
+    [Parameter]
+    public string Message { get; set; }
+    // alert
+    AlertColor alertColor = AlertColor.Primary;
+    IconName alertIconName = IconName.CheckCircleFill;
+    string alertMessage = "A simple alert - check it out!";
+
+    public void ShowSuccessAlert(string message)
+    {
+        Message = message;
+
+        alertColor = AlertColor.Success;
+        alertIconName = IconName.CheckCircleFill;
+        alertMessage = message;
+        StateHasChanged();
+    }
+
+    public void ShowDangerAlert( string message)
+    {
+        Message = message;
+        alertColor = AlertColor.Danger;
+        alertIconName = IconName.ExclamationTriangleFill;
+        alertMessage = message;
+        StateHasChanged();
+    }
+
+     public void ShowInfoAlert(string message)
+     {
+        Message = message;
+         alertColor = AlertColor.Info;
+         alertIconName = IconName.ExclamationCircleFill;
+        alertMessage = message;
+        StateHasChanged();
+     }
+ }
