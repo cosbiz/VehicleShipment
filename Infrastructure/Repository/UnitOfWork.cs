@@ -9,10 +9,13 @@ namespace Infrastructure.Repository
         private readonly IdentityDbContext _context;
         private Hashtable repositories;
 
-        public UnitOfWork(IdentityDbContext context)
+        public UnitOfWork(IdentityDbContext context, IVehicleRepository vehicleRepository)
         {
             _context = context;
+            VehicleRepository = vehicleRepository;
         }
+
+        public IVehicleRepository VehicleRepository { get; }
 
         public void Dispose()
         {

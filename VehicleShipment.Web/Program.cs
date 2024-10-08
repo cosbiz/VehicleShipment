@@ -1,10 +1,13 @@
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.Repository;
 using Infrastructure.Data;
+using Infrastructure.Repository;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using VehicleShipment.Web.Components;
+using VehicleShipment.Web.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +37,10 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 });
 
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IVehicleService, VehicleService>();
+
+builder.Services.AddScoped(typeof(EncryptionHelper<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 var app = builder.Build();
 

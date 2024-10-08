@@ -6,7 +6,7 @@ namespace Infrastructure.Repository
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
-        private readonly IdentityDbContext _dbContext;
+        internal readonly IdentityDbContext _dbContext;
 
         public GenericRepository(IdentityDbContext dbContext)
         {
