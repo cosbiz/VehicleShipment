@@ -24,6 +24,7 @@ builder.Services.AddAuthentication().AddCookie(IdentityConstants.ApplicationSche
 
 builder.Services.AddIdentityCore<User>()
 	.AddEntityFrameworkStores<AppDbContext>()
+	.AddDefaultTokenProviders()
 	.AddSignInManager();
 
 builder.Services.ConfigureApplicationCookie(opt =>

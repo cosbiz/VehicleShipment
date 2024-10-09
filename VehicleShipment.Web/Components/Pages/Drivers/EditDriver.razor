@@ -1,0 +1,95 @@
+﻿@page "/drivers/edit/{id:guid}"
+
+<h3>Edit Driver</h3>
+
+@if (isLoading)
+{
+    <p>Loading driver data...</p>
+}
+else if (driver != null)
+{
+    <EditForm Model="@driver" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label for="firstName">First Name</label>
+            <InputText id="firstName" class="form-control" @bind-Value="driver.FirstName" />
+        </div>
+
+        <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <InputText id="lastName" class="form-control" @bind-Value="driver.LastName" />
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email</label>
+            <InputText id="email" class="form-control" @bind-Value="driver.Email" disabled />
+        </div>
+
+        <div class="form-group">
+            <label for="licenceNumber">License Number</label>
+            <InputText id="licenceNumber" class="form-control" @bind-Value="driver.LicenceNumber" />
+        </div>
+
+        <div class="form-group mt-3">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+        </div>
+    </EditForm>
+}
+else
+{
+    <p>Driver not found.</p>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }  // Driver's ID
+
+    private UserResponse? driver;  // Driver model
+    private bool isLoading = true;
+
+    [Inject] public IUserService _userService { get; set; } = default!;
+    [Inject] public NavigationManager Navigation { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch the driver details based on ID
+        driver = await _userService.GetUserByIdAsync(Id.ToString());
+
+        if (driver == null)
+        {
+            // Handle driver not found scenario
+            Navigation.NavigateTo("/drivers");
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (driver != null)
+        {
+            // Update the driver details
+            var updateResult = await _userService.UpdateUserAsync(driver);
+
+            if (updateResult.IsSuccess)
+            {
+                // Navigate back to the drivers list
+                Navigation.NavigateTo("/drivers");
+            }
+            else
+            {
+                // Handle error
+                // Show an error message
+                Console.WriteLine("Failed to update driver: " + updateResult.ErrorMessage);
+            }
+        }
+    }
+
+    private void Cancel()
+    {
+        // Navigate back to the drivers list without saving
+        Navigation.NavigateTo("/drivers");
+    }
+}

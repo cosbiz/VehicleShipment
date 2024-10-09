@@ -1,0 +1,18 @@
+﻿@page "/logoutprocessor"
+
+@inject SignInManager<User> signInManager
+@inject NavigationManager nav
+@inject EncryptionHelper<LoginDTO> encrypt
+
+Logging out...
+
+@code {
+    [Parameter]
+    public string payload { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await signInManager.SignOutAsync();
+        nav.NavigateTo("/");
+    }
+}

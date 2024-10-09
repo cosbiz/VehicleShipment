@@ -2,7 +2,10 @@
 
 @inject IAccountService accountService;
 @inject NavigationManager navigationManager;
-@inject EncryptionHelper<LoginDTO> encrypt
+@inject SignInManager<User> SignInManager;
+@inject UserManager<User> UserManager;
+@inject EncryptionHelper<LoginDTO> encrypt;
+@inject AuthenticationStateProvider AuthenticationStateProvider;
 
 <h1>Login</h1>
 <div class="row">
@@ -10,25 +13,25 @@
         <section>
             <EditForm Model="Input" method="post" OnValidSubmit="OnLogin" FormName="Login">
                 <DataAnnotationsValidator />
-                    <hr />
-                    <AlertMessage @ref="alert" />
-                    <div class="form-floating mb-3">
-                        <InputText @bind-Value="Input.Email" class="form-control" aria-required="true" />
-                        <label for="email" class="form-label">Email</label>
-                        <ValidationMessage For="() => Input.Email" class="text-danger" />
-                    </div>
-                    <div class="form-floating mb-3">
-                        <InputText type="password" @bind-Value="Input.Password" class="form-control" aria-required="true" />
-                        <label for="password" class="form-label">Password</label>
-                        <ValidationMessage For="() => Input.Password" class="text-danger" />
-                    </div>
-                    <div class="form-floating mb-3">
-                        <InputCheckbox @bind-Value="Input.Remember" />
-                        Remember me
-                    </div>
-                    <div>
-                        <button type="submit" class="w-100 btn btn-lg btn-primary">Login</button>
-                    </div>
+                <hr />
+                <AlertMessage @ref="alert" />
+                <div class="form-floating mb-3">
+                    <InputText @bind-Value="Input.Email" class="form-control" aria-required="true" />
+                    <label for="email" class="form-label">Email</label>
+                    <ValidationMessage For="() => Input.Email" class="text-danger" />
+                </div>
+                <div class="form-floating mb-3">
+                    <InputText type="password" @bind-Value="Input.Password" class="form-control" aria-required="true" />
+                    <label for="password" class="form-label">Password</label>
+                    <ValidationMessage For="() => Input.Password" class="text-danger" />
+                </div>
+                <div class="form-floating mb-3">
+                    <InputCheckbox @bind-Value="Input.Remember" />
+                    Remember me
+                </div>
+                <div>
+                    <button type="submit" class="w-100 btn btn-lg btn-primary">Login</button>
+                </div>
             </EditForm>
         </section>
     </div>
@@ -40,27 +43,42 @@
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new();
 
+    // This method is executed when the component is initialized
+    protected override async Task OnInitializedAsync()
+    {
+        // Get the current authentication state
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        // Check if the user is already authenticated
+        if (user.Identity is { IsAuthenticated: true })
+        {
+            // Redirect the authenticated user to the homepage
+            navigationManager.NavigateTo("/");
+        }
+    }
+
     private async Task OnLogin()
     {
         var verify = await accountService.VerifyUser(Input.Email, Input.Password);
         if (!verify.IsSuccess)
         {
-            //Alert
+            // Alert for login error
             alert.ShowDangerAlert(verify.ErrorMessage);
             return;
         }
 
         var loginData = new LoginDTO
-        {
-            Username = verify.Value,
-            Password = Input.Password,
-            RememberMe = Input.Remember
-        };
+            {
+                Username = Input.Email,
+                Password = Input.Password,
+                RememberMe = Input.Remember
+            };
 
         var payload = encrypt.Encode(loginData);
 
         // Navigate To HomePage
-        navigationManager.NavigateTo($"/processor/{payload}");
+        navigationManager.NavigateTo($"/processor/{payload}", true);
     }
 
     private sealed class InputModel
@@ -75,5 +93,4 @@
 
         public bool Remember { get; set; }
     }
-
 }

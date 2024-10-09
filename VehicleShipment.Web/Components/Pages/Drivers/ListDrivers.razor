@@ -1,0 +1,79 @@
+﻿@page "/drivers"
+
+<h3>List of Drivers</h3>
+
+@rendermode InteractiveServer
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <!-- Add Driver Button -->
+    <div class="mb-3">
+        <button class="btn btn-primary" @onclick="NavigateToAddDriver">Add Driver</button>
+    </div>
+
+    <Grid TItem="UserResponse"
+          Class="table table-hover border-top"
+          AllowRowClick="true"
+          AllowSorting="true"
+          Responsive="true"
+          Data="@drivers"
+          OnRowClick="OnRowClick">
+
+        <GridColumns>
+            <GridColumn TItem="UserResponse" HeaderText="First Name" PropertyName="FirstName">
+                @context.FirstName
+            </GridColumn>
+            <GridColumn TItem="UserResponse" HeaderText="Last Name" PropertyName="LastName">
+                @context.LastName
+            </GridColumn>
+            <GridColumn TItem="UserResponse" HeaderText="Email" PropertyName="Email">
+                @context.Email
+            </GridColumn>
+            <GridColumn TItem="UserResponse" HeaderText="Licence Number" PropertyName="LicenceNumber">
+                @context.LicenceNumber
+            </GridColumn>
+            <GridColumn TItem="UserResponse" HeaderText="Assigned Vehicle">
+                @if (@context.Vehicle != null)
+                {
+                    @context.Vehicle.VehicleNumber
+                }
+                else
+                {
+                    <span>No Vehicle Assigned</span>
+                }
+            </GridColumn>
+        </GridColumns>
+    </Grid>
+}
+
+@code {
+    [Inject] public IUserService _userService { get; set; } = default!;
+    [Inject] public NavigationManager Navigation { get; set; } = default!;
+
+    private List<UserResponse>? drivers = new(); // List to hold users/drivers
+    private bool isLoading = true; // Loading state
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch the list of users (drivers)
+        drivers = await _userService.GetUsersWithVehiclesAsync();  // Update service method to include vehicle
+
+        isLoading = false;  // Data is now loaded
+    }
+
+    private async Task OnRowClick(GridRowEventArgs<UserResponse> args)
+    {
+        // Navigate to the edit driver page when a row is clicked
+        Navigation.NavigateTo($"/drivers/edit/{args.Item.Id}");
+    }
+
+    private void NavigateToAddDriver()
+    {
+        // Navigate to add a new driver (user)
+        Navigation.NavigateTo("/account/register");
+    }
+}

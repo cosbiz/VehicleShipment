@@ -3,6 +3,7 @@
 @inject SignInManager<User> signInManager
 @inject NavigationManager nav
 @inject EncryptionHelper<LoginDTO> encrypt
+@inject IAccountService accountService
 
 Sign in...
 
@@ -13,6 +14,22 @@ Sign in...
     protected override async Task OnInitializedAsync()
     {
         var loginDTO = encrypt.Decode(payload);
+
+        // Verify credentials
+        var verify = await accountService.VerifyUser(loginDTO.Username, loginDTO.Password);
+        if (!verify.IsSuccess)
+        {
+            return;
+        }
+
+        // Check if the account is confirmed
+        if (!verify.IsConfirmed)
+        {
+            // Redirect to password change if account is not confirmed
+            nav.NavigateTo($"/account/changepassword/{loginDTO.Username}");
+            return;
+        }
+
 
         await signInManager.PasswordSignInAsync(loginDTO.Username, loginDTO.Password, loginDTO.RememberMe, false);
         nav.NavigateTo("/");

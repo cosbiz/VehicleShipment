@@ -1,0 +1,89 @@
+﻿@page "/account/register"
+@inject IAccountService accountService;
+@inject NavigationManager navigationManager;
+
+<h3>Register</h3>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <EditForm Model="registerModel" OnValidSubmit="HandleRegistration">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label for="firstName">First Name</label>
+            <InputText id="firstName" class="form-control" @bind-Value="registerModel.FirstName" />
+            <ValidationMessage For="() => registerModel.FirstName" class="text-danger" />
+        </div>
+
+        <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <InputText id="lastName" class="form-control" @bind-Value="registerModel.LastName" />
+            <ValidationMessage For="() => registerModel.LastName" class="text-danger" />
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email</label>
+            <InputText id="email" class="form-control" @bind-Value="registerModel.Email" />
+            <ValidationMessage For="() => registerModel.Email" class="text-danger" />
+        </div>
+
+        <div class="form-group">
+            <label for="licenseNumber">License Number (Optional)</label>
+            <InputText id="licenseNumber" class="form-control" @bind-Value="registerModel.LicenceNumber" />
+        </div>
+
+        <div class="form-group mt-3">
+            <button type="submit" class="btn btn-primary w-100">Register</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    private bool isLoading = false;
+    private RegisterModel registerModel = new();
+
+    private async Task HandleRegistration()
+    {
+        isLoading = true;
+
+        var result = await accountService.RegisterUser(new RegisterUserRequest
+            {
+                FirstName = registerModel.FirstName,
+                LastName = registerModel.LastName,
+                Email = registerModel.Email,
+                LicenceNumber = registerModel.LicenceNumber
+            });
+
+        if (result.IsSuccess)
+        {
+            navigationManager.NavigateTo("/login");
+        }
+        else
+        {
+            // Show error message
+            Console.WriteLine("Error: " + result.ErrorMessage);
+        }
+
+        isLoading = false;
+    }
+
+    public class RegisterModel
+    {
+        [Required]
+        public string FirstName { get; set; } = "";
+
+        [Required]
+        public string LastName { get; set; } = "";
+
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = "";
+
+        public string? LicenceNumber { get; set; }  // Optional license number
+    }
+}

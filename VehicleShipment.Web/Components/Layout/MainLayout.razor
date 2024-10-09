@@ -1,16 +1,23 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="bb-page">
+@inject NavigationManager navigationManager;
 
+<div class="bb-page">
     <Sidebar @ref="sidebar"
              IconName="IconName.BootstrapFill"
-             Title="Blazor Bootstrap"
+             Title="Vehicle Shipment"
              DataProvider="SidebarDataProvider" />
 
     <main>
         <div class="bb-top-row px-4 d-flex justify-content-end">
             <AuthorizeView>
-                <a href="/logout">Logout</a>
+                <Authorized>
+                    <span class="me-2">Hello, @context.User.Identity.Name</span>
+                    <button class="btn btn-link" @onclick="Logout">Logout</button>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/login">Login</a>
+                </NotAuthorized>
             </AuthorizeView>
         </div>
 
@@ -18,12 +25,21 @@
             <div class="py-2">@Body</div>
         </article>
     </main>
+</div>
 
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
 </div>
 
 @code {
     Sidebar sidebar;
     IEnumerable<NavItem> navItems;
+
+    [Inject] NavigationManager NavigationManager { get; set; }
+    [Inject] SignInManager<User> SignInManager { get; set; } // Assuming you're using Identity
+    [Inject] IAccountService AccountService { get; set; } // Alternatively, your custom AccountService
 
     private async Task<SidebarDataProviderResult> SidebarDataProvider(SidebarDataProviderRequest request)
     {
@@ -40,16 +56,15 @@
                        new NavItem { Id = "1", Href = "/", IconName = IconName.HouseDoorFill, Text = "Home", Match=NavLinkMatch.All},
                        new NavItem { Id = "2", Href = "/counter", IconName = IconName.PlusSquareFill, Text = "Counter"},
                        new NavItem { Id = "3", Href = "/weather", IconName = IconName.Table, Text = "Fetch Data"},
-                       new NavItem { Id = "3", Href = "/vehicle", IconName = IconName.Truck, Text = "Vehicles"},
+                       new NavItem { Id = "4", Href = "/vehicle", IconName = IconName.Truck, Text = "Vehicles"},
+                       new NavItem { Id = "5", Href = "/drivers", IconName = IconName.Person, Text = "Drivers"},
                    };
 
         return navItems;
     }
+
+    private async Task Logout()
+    {
+        navigationManager.NavigateTo($"/logoutprocessor", true);
+    }
 }
-
-
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
-</div>
