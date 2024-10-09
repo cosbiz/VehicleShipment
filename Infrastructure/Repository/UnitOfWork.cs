@@ -1,21 +1,21 @@
 ﻿using Domain.Repository;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Infrastructure.Data;
 using System.Collections;
 
 namespace Infrastructure.Repository
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private readonly IdentityDbContext _context;
+        private readonly AppDbContext _context;
         private Hashtable repositories;
 
-        public UnitOfWork(IdentityDbContext context, IVehicleRepository vehicleRepository)
+        public IVehicleRepository VehicleRepository { get; }
+
+        public UnitOfWork(AppDbContext context, IVehicleRepository vehicleRepository)
         {
             _context = context;
             VehicleRepository = vehicleRepository;
         }
-
-        public IVehicleRepository VehicleRepository { get; }
 
         public void Dispose()
         {

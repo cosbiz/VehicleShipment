@@ -1,6 +1,5 @@
 ﻿using Domain.DTO.Request;
 using Domain.DTO.Response;
-using Domain.Entities;
 
 namespace Domain.Interfaces
 {

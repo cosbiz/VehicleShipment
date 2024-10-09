@@ -1,0 +1,37 @@
+﻿@page "/vehicle"
+
+<h3>Vehicle</h3>
+
+@rendermode InteractiveServer
+
+<Grid TItem="GetVehicleResponse"
+      Class="table table-hover border-top"
+      Data="@vehicles">
+
+    <GridColumns>
+        <GridColumn TItem="GetVehicleResponse" HeaderText="Vehicle Number" PropertyName="VehicleNumber">
+            @context.VehicleNumber
+        </GridColumn>
+        <GridColumn TItem="GetVehicleResponse" HeaderText="DriverName" PropertyName="DriverName">
+            @context.DriverName
+        </GridColumn>
+        <GridColumn TItem="GetVehicleResponse" HeaderText="VehicleType" PropertyName="VehicleType">
+            @context.VehicleType
+        </GridColumn>
+        <GridColumn TItem="GetVehicleResponse" HeaderText="VehicleBrand" PropertyName="VehicleBrand">
+            @context.VehicleBrand
+        </GridColumn>
+    </GridColumns>
+
+</Grid>
+
+@code {
+    [Inject] public IVehicleService _vehicleService { get; set; } = default!;
+
+    private List<GetVehicleResponse>? vehicles = new List<GetVehicleResponse>();
+
+    protected override void OnInitialized()
+    {
+        vehicles = _vehicleService.GetVehicles(new GetVehicleRequest());
+    }
+}

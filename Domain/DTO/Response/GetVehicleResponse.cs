@@ -9,6 +9,6 @@
         public string? VehicleBrand { get; set; }
         public string? DriverName { get; set; }
 
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
     }
 }

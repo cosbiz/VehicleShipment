@@ -22,7 +22,7 @@ namespace Infrastructure.Services
 
             return new GetVehicleResponse
             {
-                DriverName = result.User.UserName,
+                DriverName = result.User != null ? result.User.FirstName + " " + result.User.LastName : "No Driver Assigned",
                 UserId = result.UserId,
                 VehicleBrand = result.VehicleBrand,
                 VehicleNumber = result.VehicleNumber,
@@ -38,7 +38,7 @@ namespace Infrastructure.Services
             return result.Select(x => new GetVehicleResponse
             {
                 Id = x.Id,
-                DriverName = x.User.UserName,
+                DriverName = x.User != null ? x.User.FirstName + " " + x.User.LastName : "No Driver Assigned",  // Handle null User
                 UserId = x.UserId,
                 VehicleBrand = x.VehicleBrand,
                 VehicleNumber = x.VehicleNumber,

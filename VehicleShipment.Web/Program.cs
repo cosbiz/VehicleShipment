@@ -41,6 +41,7 @@ builder.Services.AddScoped<IVehicleService, VehicleService>();
 
 builder.Services.AddScoped(typeof(EncryptionHelper<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
 
 var app = builder.Build();
 

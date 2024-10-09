@@ -1,29 +1,34 @@
 ﻿using Domain.DTO.Request;
 using Domain.Entities;
 using Domain.Repository;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repository
 {
     public class VehicleRepository : GenericRepository<Vehicle>, IVehicleRepository
     {
-        public VehicleRepository(IdentityDbContext dbContext) : base(dbContext)
+        public VehicleRepository(AppDbContext dbContext) : base(dbContext)
         {
         }
 
         public List<Vehicle> GetVehicles(GetVehicleRequest request)
         {
-            IQueryable<Vehicle> query = _dbContext.Set<Vehicle>()
-                .Include(x => x.Id);
+            IQueryable<Vehicle> query = _dbContext.Set<Vehicle>();
 
-            if (request == null) return query.ToList();
+            // If no request is provided, return all vehicles
+            if (request == null) return [.. query];
 
-            if(!string.IsNullOrEmpty(request.DriverName))
+            // Filter by DriverName if provided
+            if (!string.IsNullOrEmpty(request.DriverName))
             {
-                query = query.Where(x => (EF.Functions.Like(x.VehicleNumber, $"%{request.DriverLicence}")));
+                query = query.Where(x => EF.Functions.Like(x.User.FirstName, $"%{request.DriverLicence}%"));
             }
 
+            // If more filtering criteria are required (e.g., VehicleBrand, VehicleType, etc.),
+            // you can add them here in the same way as the DriverName filtering.
+
+            // Return the filtered or full list of vehicles
             return query.ToList();
         }
     }

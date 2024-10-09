@@ -8,7 +8,9 @@
 		public string? VehicleType { get; set; }
 		public string? VehicleBrand { get; set; }
 
-		public required string UserId { get; set; }  // Foreign key to the User
-		public required User User { get; set; }  // Navigation property to User
-	}
+
+        // Nullable UserId to make the relationship optional
+        public string? UserId { get; set; }  // Nullable foreign key to User
+        public User? User { get; set; }  // Nullable navigation property to User
+    }
 }
