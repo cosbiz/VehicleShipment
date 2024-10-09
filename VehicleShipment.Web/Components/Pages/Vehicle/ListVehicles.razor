@@ -1,0 +1,96 @@
+﻿@page "/vehicle"
+
+<h3>Vehicle</h3>
+
+@rendermode InteractiveServer
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <!-- Add Vehicle Button -->
+    <div class="mb-3">
+        <button class="btn btn-primary" @onclick="NavigateToAddVehicle">Add Vehicle</button>
+    </div>
+
+    <Grid TItem="GetVehicleResponse"
+          Class="table table-hover border-top"
+          AllowRowClick="true"
+          AllowSorting="true"
+          Responsive="true"
+          Data="@vehicles"
+          OnRowClick="OnRowClick">
+
+        <GridColumns>
+            <GridColumn TItem="GetVehicleResponse" HeaderText="Vehicle Number" PropertyName="VehicleNumber">
+                @context.VehicleNumber
+            </GridColumn>
+            <GridColumn TItem="GetVehicleResponse" HeaderText="Driver Name">
+                @if (!string.IsNullOrEmpty(@context.UserId) && userNames.ContainsKey(@context.UserId))
+                {
+                    @userNames[@context.UserId]
+                }
+                else
+                {
+                    @context.DriverName
+                }
+            </GridColumn>
+            <GridColumn TItem="GetVehicleResponse" HeaderText="VehicleType" PropertyName="VehicleType">
+                @context.VehicleType
+            </GridColumn>
+            <GridColumn TItem="GetVehicleResponse" HeaderText="VehicleBrand" PropertyName="VehicleBrand">
+                @context.VehicleBrand
+            </GridColumn>
+        </GridColumns>
+
+    </Grid>
+}
+
+@code {
+    [Inject] public IVehicleService _vehicleService { get; set; } = default!;
+    [Inject] public IUserService _userService { get; set; } = default!;
+    [Inject] public NavigationManager Navigation { get; set; } = default!;
+
+    private List<GetVehicleResponse>? vehicles = new();
+    private Dictionary<string, string> userNames = new();  // Cache for UserId to FullName
+    private bool isLoading = true;  // Loading state
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch the vehicles
+        vehicles = _vehicleService.GetVehicles(new GetVehicleRequest());
+
+        // Fetch user data for vehicles with UserId
+        var userIds = vehicles.Where(v => !string.IsNullOrEmpty(v.UserId))
+                              .Select(v => v.UserId)
+                              .Distinct()
+                              .ToList();
+
+        if (userIds.Any())
+        {
+            // Fetch user details asynchronously
+            foreach (var userId in userIds)
+            {
+                var user = await _userService.GetUserByIdAsync(userId);
+                if (user != null)
+                {
+                    userNames[userId] = $"{user.FirstName} {user.LastName}";
+                }
+            }
+        }
+
+        isLoading = false;  // Data is now loaded
+    }
+
+    private async Task OnRowClick(GridRowEventArgs<GetVehicleResponse> args)
+    {
+        Navigation.NavigateTo($"/vehicle/edit/{args.Item.Id}");
+    }
+
+    private void NavigateToAddVehicle()
+    {
+        Navigation.NavigateTo("/vehicle/create");
+    }
+}

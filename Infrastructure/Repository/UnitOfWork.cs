@@ -19,7 +19,11 @@ namespace Infrastructure.Repository
 
         public void Dispose()
         {
-            throw new NotImplementedException();
+            // Dispose the AppDbContext to release any database resources.
+            _context.Dispose();
+
+            // If there are any other disposable resources in your UnitOfWork, dispose of them here.
+            GC.SuppressFinalize(this);  // Optional: To prevent the finalizer from running
         }
 
         public IGenericRepository<TEntity> Repository<TEntity>() where TEntity : class

@@ -1,0 +1,131 @@
+﻿@page "/vehicle/edit/{id:guid}"
+
+<h3>Edit Vehicle</h3>
+
+@if (vehicle != null && users != null)
+{
+    <EditForm Model="@vehicle" OnValidSubmit="SaveChanges">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label for="vehicleNumber">Vehicle Number</label>
+            <InputText id="vehicleNumber" class="form-control" @bind-Value="vehicle.VehicleNumber" />
+        </div>
+
+        <div class="form-group">
+            <label for="vehicleBrand">Vehicle Brand</label>
+            <InputText id="vehicleBrand" class="form-control" @bind-Value="vehicle.VehicleBrand" />
+        </div>
+
+        <div class="form-group">
+            <label for="vehicleType">Vehicle Type</label>
+            <InputText id="vehicleType" class="form-control" @bind-Value="vehicle.VehicleType" />
+        </div>
+
+        <div class="form-group">
+            <label for="userSelect">Assign Driver</label>
+            <InputSelect id="userSelect" class="form-control" @bind-Value="vehicle.UserId">
+                <option value="">No Driver</option> <!-- No Driver option -->
+                @foreach (var user in users)
+                {
+                    <option value="@user.Id">@user.FirstName @user.LastName</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="form-group mt-3">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+            <button type="button" class="btn btn-danger" @onclick="DeleteVehicle">Delete Vehicle</button> <!-- New Delete button -->
+        </div>
+    </EditForm>
+}
+else
+{
+    <p>Loading...</p>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private GetVehicleResponse? vehicle;
+    private string? driverName;
+    private List<UserResponse>? users; // To store the list of users
+
+    [Inject] public IVehicleService _vehicleService { get; set; } = default!;
+    [Inject] public IUserService _userService { get; set; } = default!;
+    [Inject] public NavigationManager Navigation { get; set; } = default!;
+    [Inject] public IJSRuntime JS { get; set; } = default!;  // For JavaScript confirm dialog
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch the vehicle details based on the ID
+        vehicle = _vehicleService.GetVehicleById(Id);
+
+        // Fetch the list of users for the dropdown
+        var allUsers = await _userService.GetUsersAsync();
+
+        // Fetch all vehicles to determine which users already have assigned vehicles
+        var allVehicles = await _vehicleService.GetAllVehiclesAsync();
+        var userIdsWithVehicles = allVehicles.Select(v => v.UserId).Where(id => !string.IsNullOrEmpty(id) && id != vehicle.UserId).ToList();
+
+        // Filter out users who already have vehicles assigned, but keep the currently assigned driver
+        users = allUsers.Where(u => !userIdsWithVehicles.Contains(u.Id) || u.Id == vehicle.UserId).ToList();
+
+        // Set driver name (if a user is assigned)
+        if (vehicle?.UserId != null)
+        {
+            var assignedUser = users?.FirstOrDefault(u => u.Id == vehicle.UserId);
+            driverName = assignedUser != null ? $"{assignedUser.FirstName} {assignedUser.LastName}" : "No Driver Assigned";
+        }
+        else
+        {
+            driverName = "No Driver Assigned";
+        }
+    }
+
+    private async Task SaveChanges()
+    {
+        // If "No Driver" is selected, set UserId to null
+        if (string.IsNullOrEmpty(vehicle.UserId))
+        {
+            vehicle.UserId = null;  // Remove the driver assignment
+        }
+
+        var editedVehicle = new UpdateVehicleRequest
+            {
+                UserId = vehicle.UserId,  // Save the selected UserId, which could be null
+                VehicleBrand = vehicle.VehicleBrand,
+                VehicleNumber = vehicle.VehicleNumber,
+                VehicleType = vehicle.VehicleType,
+                VehicleId = vehicle.Id
+            };
+
+        // Save the changes (implement saving logic in your service)
+        await _vehicleService.UpdateVehicle(editedVehicle);
+
+        // Navigate back to the vehicle list after saving
+        Navigation.NavigateTo("/vehicle");
+    }
+
+    private void Cancel()
+    {
+        // Navigate back to the vehicle list without saving
+        Navigation.NavigateTo("/vehicle");
+    }
+
+    private async Task DeleteVehicle()
+    {
+        // Show a confirm dialog to the user
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this vehicle?");
+        if (confirmed)
+        {
+            // Call the service to delete the vehicle
+            await _vehicleService.DeleteVehicleAsync(vehicle.Id);
+
+            // Navigate back to the vehicle list after deletion
+            Navigation.NavigateTo("/vehicle");
+        }
+    }
+}

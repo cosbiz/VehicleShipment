@@ -1,0 +1,80 @@
+﻿@page "/vehicle/create"
+
+<h3>Create Vehicle</h3>
+
+@if (isLoading)
+{
+    <p>Loading users...</p>
+}
+else
+{
+    <EditForm Model="@newVehicle" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label for="vehicleNumber">Vehicle Number</label>
+            <InputText id="vehicleNumber" class="form-control" @bind-Value="newVehicle.VehicleNumber" />
+        </div>
+
+        <div class="form-group">
+            <label for="vehicleBrand">Vehicle Brand</label>
+            <InputText id="vehicleBrand" class="form-control" @bind-Value="newVehicle.VehicleBrand" />
+        </div>
+
+        <div class="form-group">
+            <label for="vehicleType">Vehicle Type</label>
+            <InputText id="vehicleType" class="form-control" @bind-Value="newVehicle.VehicleType" />
+        </div>
+
+        <div class="form-group">
+            <label for="userSelect">Assign Driver</label>
+            <InputSelect id="userSelect" class="form-control" @bind-Value="newVehicle.UserId">
+                <option value="">No Driver</option> <!-- Option for No Driver -->
+                @foreach (var user in users)
+                {
+                    <option value="@user.Id">@user.FirstName @user.LastName</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="form-group mt-3">
+            <button type="submit" class="btn btn-primary">Create Vehicle</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    private Domain.DTO.Request.CreateVehicle newVehicle = new(); // Use CreateVehicle DTO as the model
+    private List<UserResponse> users = new(); // List to hold the users
+    private bool isLoading = true; // Loading indicator
+
+    [Inject] public IVehicleService _vehicleService { get; set; } = default!;
+    [Inject] public IUserService _userService { get; set; } = default!;
+    [Inject] public NavigationManager Navigation { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch all users
+        var allUsers = await _userService.GetUsersAsync();
+
+        // Fetch all vehicles and get the UserIds of users who already have vehicles assigned
+        var vehicles = await _vehicleService.GetAllVehiclesAsync(); // Fetch all vehicles
+        var userIdsWithVehicles = vehicles.Select(v => v.UserId).Where(id => !string.IsNullOrEmpty(id)).ToList();
+
+        // Filter users who don't have vehicles assigned
+        users = allUsers.Where(user => !userIdsWithVehicles.Contains(user.Id)).ToList();
+
+        // Mark the loading as done
+        isLoading = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        // Call the service to create a new vehicle using the DTO
+        await _vehicleService.CreateVehicleAsync(newVehicle);
+
+        // Navigate back to the vehicle list
+        Navigation.NavigateTo("/vehicle");
+    }
+}
