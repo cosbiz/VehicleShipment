@@ -13,6 +13,9 @@ namespace Domain.Entities
         public Vehicle? Vehicle { get; set; }
 
         public ICollection<Transport>? Transports { get; set; }
+        public ICollection<ItemData>? ItemDataList { get; set; }  // Navigation to ItemData
+        public ICollection<MesureUnit>? MesureUnits { get; set; } // Navigation to MesureUnit
+
         public bool AccountConfirmed { get; set; }
     }
 }
