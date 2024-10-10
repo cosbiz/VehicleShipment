@@ -41,6 +41,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IMeasureUnitService, MeasureUnitService>();
 
 builder.Services.AddScoped(typeof(EncryptionHelper<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
