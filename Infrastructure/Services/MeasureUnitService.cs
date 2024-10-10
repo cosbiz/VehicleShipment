@@ -3,17 +3,24 @@ using Domain.DTO.Response;
 using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Infrastructure.Services
 {
     public class MeasureUnitService : IMeasureUnitService
     {
         private readonly AppDbContext _dbContext;
+        private readonly UserManager<User> _userManager;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public MeasureUnitService(AppDbContext dbContext)
+        public MeasureUnitService(AppDbContext dbContext, UserManager<User> userManager, IHttpContextAccessor httpContextAccessor)
         {
             _dbContext = dbContext;
+            _userManager = userManager;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         // Create a new measure unit using MeasureUnitRequest and return MeasureUnitResponse after creation
@@ -63,11 +70,14 @@ namespace Infrastructure.Services
         public async Task<List<MeasureUnitResponse>> GetAllMesureUnitsAsync()
         {
             return await _dbContext.MesureUnits
+                .Include(mu => mu.User)  // Include the user who created it
                 .Select(mu => new MeasureUnitResponse
                 {
                     Id = mu.Id,
                     Name = mu.Name,
-                    Code = mu.Code
+                    Code = mu.Code,
+                    FirstName = mu.User.FirstName,
+                    LastName = mu.User.LastName,
                 })
                 .ToListAsync();
         }
@@ -75,7 +85,10 @@ namespace Infrastructure.Services
         // Get a specific measure unit by ID, returning MeasureUnitResponse
         public async Task<MeasureUnitResponse?> GetMesureUnitByIdAsync(int id)
         {
-            var measureUnit = await _dbContext.MesureUnits.FindAsync(id);
+            var measureUnit = await _dbContext.MesureUnits
+        .Include(mu => mu.User)  // Include user data if necessary
+        .FirstOrDefaultAsync(mu => mu.Id == id);
+
             if (measureUnit == null)
             {
                 return null;
@@ -85,7 +98,9 @@ namespace Infrastructure.Services
             {
                 Id = measureUnit.Id,
                 Name = measureUnit.Name,
-                Code = measureUnit.Code
+                Code = measureUnit.Code,
+                FirstName = measureUnit.User.FirstName,
+                LastName = measureUnit.User.LastName,
             };
         }
 
@@ -99,16 +114,22 @@ namespace Infrastructure.Services
             }
 
             // Validate User existence
-            var user = await _dbContext.Users.FindAsync(measureUnitRequest.UserId);
+            var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return null;
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
-                throw new KeyNotFoundException("User not found.");
+                return null;
             }
 
             // Update properties of the existing measure unit
             existingMeasureUnit.Name = measureUnitRequest.Name;
             existingMeasureUnit.Code = measureUnitRequest.Code;
-            existingMeasureUnit.UserId = measureUnitRequest.UserId;  // Update the User who modified it
+            existingMeasureUnit.UserId = user.Id;  // Update the User who modified it
 
             _dbContext.MesureUnits.Update(existingMeasureUnit);
             await _dbContext.SaveChangesAsync();

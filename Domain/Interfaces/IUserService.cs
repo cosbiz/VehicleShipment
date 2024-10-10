@@ -8,5 +8,6 @@ namespace Domain.Interfaces
         Task<UserResponse?> GetUserByIdAsync(string userId);
         Task<BaseResponse> UpdateUserAsync(UserResponse user);
         Task<List<UserResponse>> GetUsersWithVehiclesAsync();
+        Task<UserResponse?> GetCurrentUserAsync();
     }
 }

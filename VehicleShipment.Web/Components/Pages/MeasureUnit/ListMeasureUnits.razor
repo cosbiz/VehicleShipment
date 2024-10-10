@@ -1,0 +1,66 @@
+﻿@page "/measureUnits"
+
+<h3>List of Measure Units</h3>
+
+@rendermode InteractiveServer
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <!-- Add Measure Unit Button -->
+    <div class="mb-3">
+        <button class="btn btn-primary" @onclick="NavigateToAddMeasureUnit">Add Measure Unit</button>
+    </div>
+
+    <Grid TItem="MeasureUnitResponse"
+          Class="table table-hover border-top"
+          AllowRowClick="true"
+          AllowSorting="true"
+          Responsive="true"
+          Data="@measureUnits"
+          OnRowClick="OnRowClick">
+
+        <GridColumns>
+            <GridColumn TItem="MeasureUnitResponse" HeaderText="Name" PropertyName="Name">
+                @context.Name
+            </GridColumn>
+            <GridColumn TItem="MeasureUnitResponse" HeaderText="Code" PropertyName="Code">
+                @context.Code
+            </GridColumn>
+            <GridColumn TItem="MeasureUnitResponse" HeaderText="Created By">
+                @context.FirstName @context.LastName
+            </GridColumn>
+        </GridColumns>
+    </Grid>
+}
+
+@code {
+    [Inject] public IMeasureUnitService _measureUnitService { get; set; } = default!;
+    [Inject] public NavigationManager Navigation { get; set; } = default!;
+
+    private List<MeasureUnitResponse>? measureUnits = new(); // List to hold measure units
+    private bool isLoading = true; // Loading state
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch the list of measure units
+        measureUnits = await _measureUnitService.GetAllMesureUnitsAsync(); // Service to get all measure units
+
+        isLoading = false;  // Data is now loaded
+    }
+
+    private async Task OnRowClick(GridRowEventArgs<MeasureUnitResponse> args)
+    {
+        // Navigate to the edit measure unit page when a row is clicked
+        Navigation.NavigateTo($"/MeasureUnits/edit/{args.Item.Id}");
+    }
+
+    private void NavigateToAddMeasureUnit()
+    {
+        // Navigate to add a new measure unit
+        Navigation.NavigateTo("/MeasureUnits/create");
+    }
+}

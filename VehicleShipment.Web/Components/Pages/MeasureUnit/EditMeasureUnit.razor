@@ -1,0 +1,126 @@
+﻿@page "/measureUnits/edit/{id:int}"
+
+<h3>Edit Measure Unit</h3>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (measureUnit != null)
+{
+    <EditForm Model="measureUnit" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label for="name">Name</label>
+            <InputText id="name" class="form-control" @bind-Value="measureUnit.Name" />
+            <ValidationMessage For="() => measureUnit.Name" />
+        </div>
+
+        <div class="form-group">
+            <label for="code">Code</label>
+            <InputText id="code" class="form-control" @bind-Value="measureUnit.Code" />
+            <ValidationMessage For="() => measureUnit.Code" />
+        </div>
+
+        <div class="form-group mt-3">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+            <button type="button" class="btn btn-danger" @onclick="ConfirmDelete">Delete Measure Unit</button> <!-- New Delete button -->
+        </div>
+    </EditForm>
+}
+else
+{
+    <p>Measure Unit not found.</p>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }  // Measure Unit ID
+
+    private MesureUnitRequest? measureUnit;
+    private bool isLoading = true;
+
+    [Inject] public IMeasureUnitService MeasureUnitService { get; set; } = default!;
+    [Inject] public NavigationManager Navigation { get; set; } = default!;
+    [Inject] public IJSRuntime JS { get; set; } = default!; // For JavaScript confirm dialog
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch the MeasureUnit details based on the ID
+        var response = await MeasureUnitService.GetMesureUnitByIdAsync(Id);
+
+        if (response != null)
+        {
+            // Map MeasureUnitResponse to MesureUnitRequest for editing
+            measureUnit = new MesureUnitRequest
+                {
+                    Id = response.Id,
+                    Name = response.Name,
+                    Code = response.Code,
+                    UserId = "" // Initialize the UserId if needed
+                };
+        }
+        else
+        {
+            // Handle MeasureUnit not found
+            Console.WriteLine("Measure Unit not found.");
+            Navigation.NavigateTo("/measureUnits");
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (measureUnit != null)
+        {
+            // Call the service to update the measure unit
+            var result = await MeasureUnitService.UpdateMesureUnitAsync(Id, measureUnit);
+
+            if (result != null)
+            {
+                // Redirect back to the measure units list after successful update
+                Navigation.NavigateTo("/measureUnits");
+            }
+            else
+            {
+                // Handle error (Optional: show an error message)
+                Console.WriteLine("Error updating Measure Unit.");
+            }
+        }
+    }
+
+    private async Task ConfirmDelete()
+    {
+        // Show a confirm dialog to the user
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this Measure Unit?");
+        if (confirmed)
+        {
+            await DeleteMeasureUnit();
+        }
+    }
+
+    private async Task DeleteMeasureUnit()
+    {
+        var result = await MeasureUnitService.DeleteMesureUnitAsync(Id);
+
+        if (result)
+        {
+            // Navigate back to the measure units list after deletion
+            Navigation.NavigateTo("/measureUnits");
+        }
+        else
+        {
+            // Handle error (Optional: show an error message)
+            Console.WriteLine("Error deleting Measure Unit.");
+        }
+    }
+
+    private void Cancel()
+    {
+        // Navigate back to the measure units list without saving
+        Navigation.NavigateTo("/measureUnits");
+    }
+}

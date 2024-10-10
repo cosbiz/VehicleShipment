@@ -2,8 +2,10 @@
 using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Infrastructure.Services
 {
@@ -11,11 +13,38 @@ namespace Infrastructure.Services
     {
         private readonly UserManager<User> _userManager;
         private readonly AppDbContext _dbContext;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public UserService(UserManager<User> userManager, AppDbContext _dbContext)
+        public UserService(UserManager<User> userManager, AppDbContext _dbContext, IHttpContextAccessor httpContextAccessor)
         {
             _userManager = userManager;
             this._dbContext = _dbContext;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        // Get the currently logged-in user
+        public async Task<UserResponse?> GetCurrentUserAsync()
+        {
+            var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return null;
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return null;
+            }
+
+            return new UserResponse
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                LicenceNumber = user.LicenceNumber
+            };
         }
 
         // Get user by ID
