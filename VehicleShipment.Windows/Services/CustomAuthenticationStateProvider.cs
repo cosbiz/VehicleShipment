@@ -51,38 +51,38 @@ namespace VehicleShipment.Windows.Services
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
             var identity = new ClaimsIdentity();
+
+            // Retrieve token from SecureStorage or wherever you're storing it
             var token = await SecureStorage.GetAsync("accounttoken");
 
             if (!string.IsNullOrEmpty(token))
             {
+                // Validate the token and populate claims
                 var handler = new JwtSecurityTokenHandler();
                 var jwtToken = handler.ReadJwtToken(token);
 
-                if (jwtToken != null)
-                {
-                    var claims = jwtToken.Claims;
-                    identity = new ClaimsIdentity(claims, "jwt");
-                }
+                var claims = jwtToken.Claims;
+                identity = new ClaimsIdentity(claims, "jwt");
             }
 
-            return new AuthenticationState(new ClaimsPrincipal(identity));
+            var user = new ClaimsPrincipal(identity);
+            return new AuthenticationState(user);
         }
 
-        private string GenerateJwtToken(IdentityUser user)
+        private string GenerateJwtToken(User user)
         {
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.Name, user.UserName)
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.NameIdentifier, user.Id) // Add this to ensure the user ID is included
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.Now.AddMinutes(30),
                 signingCredentials: creds);

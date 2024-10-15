@@ -1,6 +1,56 @@
 ﻿@page "/"
 @attribute [Authorize]
 
-<h1>Hello, world!</h1>
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject CustomAuthenticationStateProvider CustomAuthSP
+@inject NavigationManager NavigationManager
+@inject SignInManager<User> SignInManager
+@inject IUserService UserService
 
-Welcome to your new app.
+<PageTitle>Vehicle Shipment</PageTitle>
+
+<h1>@greetingMessage</h1>
+
+@if (isLoggedIn)
+{
+    <button class="btn btn-danger" @onclick="Logout">Logout</button>
+}
+else
+{
+    <p>Welcome to your new Blazor Bootstrap - Web App (.NET 8).</p>
+}
+
+@code {
+    private bool isLoggedIn = false;
+    private string greetingMessage = "Hello, world!";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            isLoggedIn = true;
+
+            var userId = user.FindFirst(c => c.Type == "sub")?.Value;
+
+            var userDetails = await UserService.GetUserByIdAsync(userId);
+
+            // Retrieve the FirstName claim (assuming it's stored in the claims)
+            var firstName = userDetails.FirstName;
+
+            // Update the greeting message to show the user's first name
+            greetingMessage = $"Hello, {firstName}";
+        }
+        else
+        {
+            isLoggedIn = false;
+        }
+    }
+
+    private async Task Logout()
+    {
+        await CustomAuthSP.Logout();
+    }
+}

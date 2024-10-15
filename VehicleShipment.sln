@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infrastructure", "Infrastru
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VehicleShipment.Web", "VehicleShipment.Web\VehicleShipment.Web.csproj", "{ABF88DFB-8692-4D2F-8781-17A2A5CBA587}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VehicleShipment.Windows", "VehicleShipment.Windows\VehicleShipment.Windows.csproj", "{BDC3FDC4-8229-42BF-81BB-17F44388601D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VehicleShipment.Windows", "VehicleShipment.Windows\VehicleShipment.Windows.csproj", "{BDC3FDC4-8229-42BF-81BB-17F44388601D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

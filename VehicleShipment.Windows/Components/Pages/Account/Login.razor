@@ -1,7 +1,8 @@
 ﻿@page "/login"
-@using VehicleShipment.Windows.Models
 @inject NavigationManager Navigation
 @inject CustomAuthenticationStateProvider AuthStateProvider
+@inject IAccountService AccountService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <h1>Login</h1>
 
@@ -35,9 +36,40 @@
 @code {
     private LoginViewModel loginModel = new();
 
+    protected override async Task OnInitializedAsync()
+    {
+        // Get the current authentication state
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        // If the user is already authenticated, redirect to home page
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+
     private async Task HandleValidSubmit()
     {
-        // Call the login method from CustomAuthenticationStateProvider
+        // Verify credentials using the accountService
+        var verify = await AccountService.VerifyUser(loginModel.Username, loginModel.Password);
+
+        // If verification is not successful, return and don't proceed with login
+        if (!verify.IsSuccess)
+        {
+            loginModel.LoginFailureHidden = false; // Show error message if login fails
+            return;
+        }
+
+        // Check if the account is confirmed
+        if (!verify.IsConfirmed)
+        {
+            // Redirect to password change page if account is not confirmed
+            Navigation.NavigateTo($"/account/changepassword/{loginModel.Username}");
+            return;
+        }
+
+        // Call the login method from CustomAuthenticationStateProvider if verification is successful
         var token = await AuthStateProvider.Login(loginModel.Username, loginModel.Password);
 
         if (token != null)

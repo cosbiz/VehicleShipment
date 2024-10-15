@@ -8,7 +8,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using VehicleShipment.Windows.Services;
-using Domain.Entities; // Assuming your custom User class is in Domain.Entities
+using Domain.Entities;
+using Domain.Interfaces;
+using Infrastructure.Services; // Assuming your custom User class is in Domain.Entities
 
 namespace VehicleShipment.Windows
 {
@@ -46,6 +48,7 @@ namespace VehicleShipment.Windows
             // Register CustomAuthenticationStateProvider
             builder.Services.AddScoped<CustomAuthenticationStateProvider>();
             builder.Services.AddScoped<AuthenticationStateProvider>(s => s.GetRequiredService<CustomAuthenticationStateProvider>());
+            builder.Services.AddHttpContextAccessor();
 
             // Register DbContext with SQL Server connection
             builder.Services.AddDbContext<AppDbContext>(options =>
@@ -76,11 +79,13 @@ namespace VehicleShipment.Windows
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtIssuer,   // JWT Issuer
-                    ValidAudience = jwtAudience,  // JWT Audience
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)) // JWT Secret Key
                 };
             });
+
+
+            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IAccountService, AccountService>();
 
             return builder.Build();
         }
