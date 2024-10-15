@@ -1,6 +1,14 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
+﻿using Infrastructure.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using VehicleShipment.Windows.Services;
+using Domain.Entities; // Assuming your custom User class is in Domain.Entities
 
 namespace VehicleShipment.Windows
 {
@@ -16,21 +24,63 @@ namespace VehicleShipment.Windows
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 });
 
+            // Create a configuration builder to read from appsettings.json
+            var configBuilder = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory) // Set the base path to the app's output directory
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+
+            var configuration = configBuilder.Build();
+            builder.Configuration.AddConfiguration(configuration);
+
             builder.Services.AddMauiBlazorWebView();
-
             builder.Services.AddBlazorBootstrap();
-
-            
-
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
 
+            // Add Authorization
             builder.Services.AddAuthorizationCore();
+
+            // Register CustomAuthenticationStateProvider
             builder.Services.AddScoped<CustomAuthenticationStateProvider>();
             builder.Services.AddScoped<AuthenticationStateProvider>(s => s.GetRequiredService<CustomAuthenticationStateProvider>());
+
+            // Register DbContext with SQL Server connection
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // Add Identity services, using your custom User class
+            builder.Services.AddIdentity<User, IdentityRole>()
+                .AddEntityFrameworkStores<AppDbContext>()
+                .AddDefaultTokenProviders();
+
+            // JWT Configuration - Get values from appsettings.json
+            var jwtKey = builder.Configuration["Jwt:Key"];
+            var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+            var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+            // Configure JWT authentication
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.UseSecurityTokenValidators = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtIssuer,   // JWT Issuer
+                    ValidAudience = jwtAudience,  // JWT Audience
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)) // JWT Secret Key
+                };
+            });
 
             return builder.Build();
         }

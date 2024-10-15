@@ -1,29 +1,32 @@
 ﻿@page "/login"
 @using VehicleShipment.Windows.Models
-
-@inject NavigationManager Navigation;
-@inject CustomAuthenticationStateProvider AuthStateProvider;
+@inject NavigationManager Navigation
+@inject CustomAuthenticationStateProvider AuthStateProvider
 
 <h1>Login</h1>
 
 <div class="alert alert-info">
-    This is a dummy login page, providing `Test` for the Username and Password will authenticate you.
+    Please enter your login credentials.
 </div>
 
 <EditForm Model="@loginModel" OnValidSubmit="@HandleValidSubmit">
     <DataAnnotationsValidator />
     <ValidationSummary />
+
     <div class="alert alert-danger" hidden="@loginModel.LoginFailureHidden">
-        Invalid login attempt, please correct and try again.
+        Invalid login attempt, please try again.
     </div>
+
     <div class="form-group">
         <label>Username</label>
-        <InputText id="email" @bind-Value="loginModel.Username" class="form-control" />
+        <InputText id="username" @bind-Value="loginModel.Username" class="form-control" />
     </div>
+
     <div class="form-group">
         <label>Password</label>
         <InputText id="password" type="password" @bind-Value="loginModel.Password" class="form-control" />
     </div>
+
     <div class="form-group mt-1">
         <button type="submit" class="btn btn-primary w-100">Login Now</button>
     </div>
@@ -34,15 +37,18 @@
 
     private async Task HandleValidSubmit()
     {
-        //Valiate user acount
-        var successful = loginModel.ValidateLogin(out string jwtToken);
+        // Call the login method from CustomAuthenticationStateProvider
+        var token = await AuthStateProvider.Login(loginModel.Username, loginModel.Password);
 
-        //Not successful, don't need to do anything
-        if (!successful)
-            return;
-
-        //Call login and recirect
-        await AuthStateProvider.Login(jwtToken);
-        Navigation.NavigateTo(""); //Root URL
+        if (token != null)
+        {
+            // If login is successful, redirect to the homepage or a protected page
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            // Show error message if login fails
+            loginModel.LoginFailureHidden = false;
+        }
     }
 }
