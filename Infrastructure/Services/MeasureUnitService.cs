@@ -3,6 +3,7 @@ using Domain.DTO.Response;
 using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -15,12 +16,14 @@ namespace Infrastructure.Services
         private readonly AppDbContext _dbContext;
         private readonly UserManager<User> _userManager;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly AuthenticationStateProvider _authenticationStateProvider;
 
-        public MeasureUnitService(AppDbContext dbContext, UserManager<User> userManager, IHttpContextAccessor httpContextAccessor)
+        public MeasureUnitService(AppDbContext dbContext, UserManager<User> userManager, IHttpContextAccessor httpContextAccessor, AuthenticationStateProvider authenticationStateProvider)
         {
             _dbContext = dbContext;
             _userManager = userManager;
             _httpContextAccessor = httpContextAccessor;
+            _authenticationStateProvider = authenticationStateProvider;
         }
 
         // Create a new measure unit using MeasureUnitRequest and return MeasureUnitResponse after creation
@@ -114,10 +117,22 @@ namespace Infrastructure.Services
             }
 
             // Validate User existence
+
+
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return null;
+                var authState = await _authenticationStateProvider.GetAuthenticationStateAsync();
+                var userState = authState.User;
+
+                if (userState.Identity != null && userState.Identity.IsAuthenticated)
+                {
+                    userId = userState.FindFirst(c => c.Type == "sub")?.Value;
+                }
+                else
+                {
+                    return null;
+                }
             }
 
             var user = await _userManager.FindByIdAsync(userId);

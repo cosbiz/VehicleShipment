@@ -10,7 +10,9 @@ using System.Text;
 using VehicleShipment.Windows.Services;
 using Domain.Entities;
 using Domain.Interfaces;
-using Infrastructure.Services; // Assuming your custom User class is in Domain.Entities
+using Infrastructure.Services;
+using Domain.Repository;
+using Infrastructure.Repository; // Assuming your custom User class is in Domain.Entities
 
 namespace VehicleShipment.Windows
 {
@@ -83,9 +85,10 @@ namespace VehicleShipment.Windows
                 };
             });
 
-
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAccountService, AccountService>();
+            builder.Services.AddScoped<IMeasureUnitService, MeasureUnitService>();
+            builder.Services.AddScoped<IVehicleService, VehicleService>();
 
             return builder.Build();
         }

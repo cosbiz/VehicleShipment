@@ -2,6 +2,7 @@
 using Domain.Entities;
 using Domain.Interfaces;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -14,12 +15,14 @@ namespace Infrastructure.Services
         private readonly UserManager<User> _userManager;
         private readonly AppDbContext _dbContext;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly AuthenticationStateProvider _authenticationStateProvider;
 
-        public UserService(UserManager<User> userManager, AppDbContext _dbContext, IHttpContextAccessor httpContextAccessor)
+        public UserService(UserManager<User> userManager, AppDbContext _dbContext, IHttpContextAccessor httpContextAccessor, AuthenticationStateProvider authenticationStateProvider)
         {
             _userManager = userManager;
             this._dbContext = _dbContext;
             _httpContextAccessor = httpContextAccessor;
+            _authenticationStateProvider = authenticationStateProvider;
         }
 
         // Get the currently logged-in user
@@ -27,6 +30,46 @@ namespace Infrastructure.Services
         {
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
+            {
+                var authState = await _authenticationStateProvider.GetAuthenticationStateAsync();
+                var userState = authState.User;
+
+                if (userState.Identity != null && userState.Identity.IsAuthenticated)
+                {
+                    userId = userState.FindFirst(c => c.Type == "sub")?.Value;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return null;
+            }
+
+            return new UserResponse
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                LicenceNumber = user.LicenceNumber
+            };
+        }
+
+        public async Task<UserResponse?> GetCurrentUserAppAsync()
+        {
+            var authState = await _authenticationStateProvider.GetAuthenticationStateAsync();
+            var userState = authState.User;
+            var userId = "";
+
+            if (userState.Identity != null && userState.Identity.IsAuthenticated)
+            {
+                userId = userState.FindFirst(c => c.Type == "sub")?.Value;                
+            } else
             {
                 return null;
             }

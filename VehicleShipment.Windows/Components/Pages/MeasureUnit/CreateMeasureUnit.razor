@@ -1,0 +1,75 @@
+﻿@page "/measureUnits/create"
+@attribute [Authorize]
+
+<h3>Create Measure Unit</h3>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <EditForm Model="newMeasureUnit" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label for="name">Name</label>
+            <InputText id="name" class="form-control" @bind-Value="newMeasureUnit.Name" />
+            <ValidationMessage For="() => newMeasureUnit.Name" />
+        </div>
+
+        <div class="form-group">
+            <label for="code">Code</label>
+            <InputText id="code" class="form-control" @bind-Value="newMeasureUnit.Code" />
+            <ValidationMessage For="() => newMeasureUnit.Code" />
+        </div>
+
+        <div class="form-group mt-3">
+            <button type="submit" class="btn btn-primary">Create Measure Unit</button>
+            <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    private MesureUnitRequest newMeasureUnit = new(); // Model for the form
+    private bool isLoading = false;
+
+    [Inject] public IMeasureUnitService MeasureUnitService { get; set; } = default!;
+    [Inject] public NavigationManager Navigation { get; set; } = default!;
+    [Inject] public IUserService UserService { get; set; } = default!; // To get the current user
+
+    private async Task HandleValidSubmit()
+    {
+        // Get the current user's ID
+        var currentUser = await UserService.GetCurrentUserAppAsync();
+        if (currentUser == null)
+        {
+            Console.WriteLine("Error: User not logged in.");
+            return;
+        }
+
+        newMeasureUnit.UserId = currentUser.Id;
+
+        // Call the service to create a new measure unit
+        var result = await MeasureUnitService.CreateMesureUnitAsync(newMeasureUnit);
+
+        if (result != null)
+        {
+            // Redirect to the list of measure units after successful creation
+            Navigation.NavigateTo("/measureUnits");
+        }
+        else
+        {
+            // Handle the error (Optional: show an error message)
+            Console.WriteLine("Error creating Measure Unit.");
+        }
+    }
+
+    private void Cancel()
+    {
+        // Navigate back to the measure units list without saving
+        Navigation.NavigateTo("/measureUnits");
+    }
+}

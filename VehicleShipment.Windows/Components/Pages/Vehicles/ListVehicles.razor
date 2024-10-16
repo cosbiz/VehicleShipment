@@ -1,0 +1,75 @@
+﻿@page "/vehicle"
+@attribute [Authorize]
+
+<h3>Vehicle</h3>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <!-- Add Vehicle Button -->
+    <div class="mb-3">
+        <button class="btn btn-primary" @onclick="NavigateToAddVehicle">Add Vehicle</button>
+    </div>
+
+    <Grid TItem="Vehicle"
+          Class="table table-hover border-top"
+          AllowRowClick="true"
+          AllowSorting="true"
+          Responsive="true"
+          Data="@vehicles"
+          OnRowClick="OnRowClick">
+
+        <GridColumns>
+            <GridColumn TItem="Vehicle" HeaderText="Vehicle Number" PropertyName="VehicleNumber">
+                @context.VehicleNumber
+            </GridColumn>
+            <GridColumn TItem="Vehicle" HeaderText="Vehicle Type" PropertyName="VehicleType">
+                @context.VehicleType
+            </GridColumn>
+            <GridColumn TItem="Vehicle" HeaderText="Vehicle Brand" PropertyName="VehicleBrand">
+                @context.VehicleBrand
+            </GridColumn>
+        </GridColumns>
+
+    </Grid>
+}
+
+@code {
+    [Inject] public NavigationManager Navigation { get; set; } = default!;
+    [Inject] public IVehicleService _vehicleService { get; set; } = default!;
+    [Inject] public IUserService _userService { get; set; } = default!;  // Assuming a user service is available to fetch driver info
+
+    private List<Vehicle>? vehicles = new();
+    private bool isLoading = true;  // Loading state
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Fetch all vehicles asynchronously
+            vehicles = await _vehicleService.GetAllVehiclesAsync();
+        }
+        catch (Exception ex)
+        {
+            // Handle any error that occurs during the data fetch
+            Console.WriteLine($"Error fetching vehicles: {ex.Message}");
+        }
+
+        isLoading = false;  // Data is now loaded
+    }
+
+    private async Task OnRowClick(GridRowEventArgs<Vehicle> args)
+    {
+        // Navigate to the edit page for the selected vehicle
+        Navigation.NavigateTo($"/vehicle/edit/{args.Item.Id}");
+    }
+
+    private void NavigateToAddVehicle()
+    {
+        // Navigate to the create vehicle page
+        Navigation.NavigateTo("/vehicle/create");
+    }
+}

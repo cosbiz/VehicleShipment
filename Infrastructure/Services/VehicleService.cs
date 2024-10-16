@@ -2,128 +2,117 @@
 using Domain.DTO.Response;
 using Domain.Entities;
 using Domain.Interfaces;
-using Domain.Repository;
 using Infrastructure.Data;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Services
 {
     public class VehicleService : IVehicleService
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly AppDbContext _dbContext;
 
-        public VehicleService(IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor, AppDbContext dbContext)
+        public VehicleService(AppDbContext dbContext)
         {
-            _unitOfWork = unitOfWork;
-            _httpContextAccessor = httpContextAccessor;
             _dbContext = dbContext;
         }
 
-        public async Task CreateVehicleAsync(CreateVehicle vehicle)
-        {
-            // Assign a new Guid for the vehicle if it's not already set
-            if (vehicle.Id == Guid.Empty)
-            {
-                vehicle.Id = Guid.NewGuid();
-            }
-
-            Vehicle createVehicle = new()
-            {
-                Id = vehicle.Id,
-                UserId = vehicle.UserId,
-                User = vehicle.User,
-                VehicleBrand = vehicle.VehicleBrand,
-                VehicleNumber = vehicle.VehicleNumber,
-                VehicleType = vehicle.VehicleType
-            };
-
-            // Add the vehicle to the Vehicles DbSet
-            await _dbContext.Vehicles.AddAsync(createVehicle);
-
-            // Save the changes to the database
-            await _dbContext.SaveChangesAsync();
-        }
-
-        public async Task DeleteVehicleAsync(Guid vehicleId)
-        {
-            var vehicle = await _dbContext.Vehicles.FindAsync(vehicleId);
-            if (vehicle != null)
-            {
-                _dbContext.Vehicles.Remove(vehicle);
-                await _dbContext.SaveChangesAsync();
-            }
-        }
-
+        // Fetch all vehicles asynchronously
         public async Task<List<Vehicle>> GetAllVehiclesAsync()
         {
-            return await _dbContext.Vehicles.ToListAsync();
+            return await _dbContext.Vehicles.ToListAsync();  // Assuming Vehicles is the DbSet for Vehicle entity
         }
 
-        public GetVehicleResponse GetVehicleById(Guid vehicleId)
-        {
-            var result = _unitOfWork.Repository<Vehicle>().GetByIdAsync(vehicleId);
-            if (result == null) return null;
-
-            return new GetVehicleResponse
-            {
-                DriverName = result.User != null ? result.User.FirstName + " " + result.User.LastName : "No Driver Assigned",
-                UserId = result.UserId,
-                VehicleBrand = result.VehicleBrand,
-                VehicleNumber = result.VehicleNumber,
-                VehicleType = result.VehicleType,
-                Id = result.Id,
-            };
-        }
-
+        // Get a list of vehicles based on some request criteria (example implementation)
         public List<GetVehicleResponse> GetVehicles(GetVehicleRequest request)
         {
-            var result = _unitOfWork.VehicleRepository.GetVehicles(request);
+            // Filter vehicles based on request properties (e.g., vehicle type, brand, etc.)
+            var vehicles = _dbContext.Vehicles.AsQueryable();
 
-            return result.Select(x => new GetVehicleResponse
+            // Example of filtering (you can modify this based on the actual request properties)
+            if (!string.IsNullOrEmpty(request.VehicleType))
             {
-                Id = x.Id,
-                DriverName = x.User != null ? x.User.FirstName + " " + x.User.LastName : "No Driver Assigned",  // Handle null User
-                UserId = x.UserId,
-                VehicleBrand = x.VehicleBrand,
-                VehicleNumber = x.VehicleNumber,
-                VehicleType = x.VehicleType
+                vehicles = vehicles.Where(v => v.VehicleType == request.VehicleType);
+            }
+
+            if (!string.IsNullOrEmpty(request.VehicleBrand))
+            {
+                vehicles = vehicles.Where(v => v.VehicleBrand == request.VehicleBrand);
+            }
+
+            return vehicles.Select(v => new GetVehicleResponse
+            {
+                Id = v.Id,
+                VehicleNumber = v.VehicleNumber,
+                VehicleType = v.VehicleType,
+                VehicleBrand = v.VehicleBrand
             }).ToList();
         }
 
+        // Get vehicle by ID
+        public GetVehicleResponse GetVehicleById(Guid vehicleId)
+        {
+            var vehicle = _dbContext.Vehicles.FirstOrDefault(v => v.Id == vehicleId);
+            if (vehicle == null)
+            {
+                return null;
+            }
+
+            return new GetVehicleResponse
+            {
+                Id = vehicle.Id,
+                VehicleNumber = vehicle.VehicleNumber,
+                VehicleType = vehicle.VehicleType,
+                VehicleBrand = vehicle.VehicleBrand,
+                UserId = vehicle.UserId
+            };
+        }
+
+        // Update a vehicle
         public async Task<BaseResponse> UpdateVehicle(UpdateVehicleRequest request)
         {
-            var result = new BaseResponse
+            var vehicle = await _dbContext.Vehicles.FirstOrDefaultAsync(v => v.Id == request.VehicleId);
+            if (vehicle == null)
             {
-                IsSuccess = false
+                return new BaseResponse { IsSuccess = false, ErrorMessage = "Vehicle not found" };
+            }
+
+            // Update vehicle properties
+            vehicle.VehicleNumber = request.VehicleNumber;
+            vehicle.VehicleType = request.VehicleType;
+            vehicle.VehicleBrand = request.VehicleBrand;
+
+            _dbContext.Vehicles.Update(vehicle);
+            await _dbContext.SaveChangesAsync();
+
+            return new BaseResponse { IsSuccess = true };
+        }
+
+        // Create a new vehicle asynchronously
+        public async Task CreateVehicleAsync(CreateVehicle request)
+        {
+            var newVehicle = new Vehicle
+            {
+                Id = Guid.NewGuid(),
+                VehicleNumber = request.VehicleNumber,
+                VehicleType = request.VehicleType,
+                VehicleBrand = request.VehicleBrand
             };
 
-            var currentVehicle = _unitOfWork.VehicleRepository.GetByIdAsync(request.VehicleId);
-            if (currentVehicle is null)
+            await _dbContext.Vehicles.AddAsync(newVehicle);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        // Delete a vehicle asynchronously
+        public async Task DeleteVehicleAsync(Guid vehicleId)
+        {
+            var vehicle = await _dbContext.Vehicles.FirstOrDefaultAsync(v => v.Id == vehicleId);
+            if (vehicle == null)
             {
-                result.ErrorMessage = "Vehicle does not exist";
-                return result;
+                throw new KeyNotFoundException("Vehicle not found");
             }
 
-            currentVehicle.VehicleBrand = request.VehicleBrand;
-            currentVehicle.VehicleNumber = request.VehicleNumber;
-            currentVehicle.VehicleType = request.VehicleType;
-            currentVehicle.UserId = request.UserId;
-
-            _unitOfWork.VehicleRepository.Update(currentVehicle);
-
-            var dbResult = await _unitOfWork.SaveChanges() > 0;
-            if (dbResult) 
-            {
-                result.IsSuccess = true;
-            } else
-            {
-                result.ErrorMessage = "Failed when saving to database! Try Again later";
-            }
-
-            return result;
+            _dbContext.Vehicles.Remove(vehicle);
+            await _dbContext.SaveChangesAsync();
         }
     }
 }
